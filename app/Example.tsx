@@ -1,21 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
-import QuizPopup from "./QuizPopup";
+import React, { useState, useEffect, useRef } from "react";
 import {
+  Animated,
+  TouchableOpacity,
   Text,
   View,
-  Button,
-  Image,
   StyleSheet,
-  Modal,
-  Animated,
-  Easing,
-  TouchableOpacity,
-  ScrollView, 
+  ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import ConfettiCannon from "react-native-confetti-cannon";
-const correctAnswerIcon = require("../assets/images/CorrectAnswerIcon.png"); 
-const wrongAnswerIcon = require("../assets/images/WrongAnswerIcon.png"); 
+import QuizPopup from "./QuizPopup";
 
 type Question = {
   question: string;
@@ -54,160 +48,69 @@ export default function Quiz() {
       correctAnswer: "const MyComponent",
       hint: "Functional components are defined using an arrow function or the function keyword.",
     },
-
-    {
-      question: "What is the purpose of useEffect hook in React?",
-      code: "useEffect(() => { console.log('Effect'); }, []);",
-      options: [
-        "To manage state",
-        "To manage side effects",
-        "To render components",
-        "To handle events",
-      ],
-      correctAnswer: "To manage side effects",
-      hint: "Consider what happens when components mount or update.",
-    },
   ];
 
-  const [currentQuestion, setCurrentQuestion] = useState<number>(0);
-  const [score, setScore] = useState<number>(0);
-  const [index, setIndex] = useState<number>(0);
-  const [scrollbarWidth, setScrollbarWidth] = useState<number>(200);
-  const [showScore, setShowScore] = useState<boolean>(false);
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [resultMessage, setResultMessage] = useState<string | null>(null);
-  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showPopup, setShowPopup] = useState<boolean>(false);
   const [hint, setHint] = useState<boolean>(false);
   const shakeAnimation = useRef(new Animated.Value(0)).current;
-  const [buttonText, setButtonText] = useState<string | null>("Submit");
-  const [isNext, setIsNext] = useState<boolean | null>(false);
-  const [isDisable, setIsDisable] = useState<boolean | null>(false);
-  const [isRetry, setIsRetry] = useState<boolean | null>(false);
+  const [buttonText, setButtonText] = useState<string>("Submit");
+  const [showScore, setShowScore] = useState<boolean>(false);
+  const [isNext, setIsNext] = useState<boolean>(false);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<number>(0);
+  const [score, setScore] = useState<number>(0);
+  const [index, setIndex] = useState<number>(0);
+  const [scrollbarWidth, setScrollbarWidth] = useState<number>(0);
+  // const [buttonText, setButtonText] = useState<string | null>("Submit");
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [selectedOptionIdx, setSelectedOptionIdx] = useState<number | null>(
     null
-  ); 
+  );
   const [questionResults, setQuestionResults] = useState<Array<boolean | null>>(
     Array(questions.length).fill(null)
   );
 
   useEffect(() => {
-    // Set the scrollbar width dynamically
-    setScrollbarWidth(200 / questions.length); 
+    setScrollbarWidth(200 / questions.length);
   }, [questions.length]);
-  const OptionSelected = (option: string): void => {
-    setSelectedOption(option);    
+
+  const handleOptionPress = (option: string, idx: number): void => {
+    setSelectedOption(option);
+    setSelectedOptionIdx(idx);
+    setButtonText("Submit");
   };
-  const handleAnswer = () => {   
+
+  const handleAnswer = () => {
+    if (selectedOption === null) return;
+
     const correct = selectedOption === questions[currentQuestion].correctAnswer;
-    // Update the array of results
+
     setQuestionResults((prevResults) => {
       const updatedResults = [...prevResults];
       updatedResults[currentQuestion] = correct;
       return updatedResults;
     });
-  
+
     if (correct) {
       setScore(score + 1);
       setHint(false);
       setButtonText("Next");
-      setIsNext(true);     
-      setSelectedOption(null);
-      setIsDisable(false);
-     
-    } else {
-      triggerShakeAnimation(); // Trigger the shake animation on incorrect answer
-      if (!isRetry) {
-        setButtonText("Submit");
-        setIsNext(true);
-      } else {
-        setButtonText("Next");
-        setIsNext(false);
-      }
-      setIsDisable(true);
-     
-      setTimeout(() => {
-        setIsDisable(false);
-        setSelectedOptionIdx(null);
-        setSelectedOption(null);
-         setHint(true);
-      }, 3000); // Delay of 1000 milliseconds (1 second)
-    }
-    setIsCorrect(correct);
-    setShowPopup(true);
-    setTimeout(() => setShowPopup(false), 3000);
-    const result = (score * 100) / questions.length;
-
-    let message = "";
-    switch (true) {
-      case result >= 80:
-        message = "Excellent!";
-        break;
-      case result >= 60:
-        message = "Good Job!";
-        break;
-      default:
-        message = "Keep Trying!";
-    }
-
-    setResultMessage(message);
-  };
-  const handleRetry = () => {
-    setSelectedOption(null);
-    setIsCorrect(null);
-    setShowPopup(false);
-    setHint(true);
-    setIsRetry(true);
-    setIsCorrect(null);
-    setButtonText("Submit");
-    setIsDisable(false);
-    setSelectedOptionIdx(null);
-  };
-
-  const handleNext = (): void => {
-    const nextQuestion = currentQuestion + 1;
-    if (nextQuestion < questions.length) {
-      setCurrentQuestion(nextQuestion);
-      setSelectedOption(null);
-      setIsCorrect(null);
-      setIndex(index + 1);
-      setHint(false);
-      setIsNext(false);  
-      setIsRetry(false);   
-      setIsDisable(false);
-      setButtonText("Submit");
       setSelectedOptionIdx(null);
+      setSelectedOption(null);
+      setIsNext(true); // Disable options until "Next" is clicked
     } else {
-      setShowScore(true);
-      setIndex(0);
+      // Handle incorrect answer logic here
     }
   };
-   const handleOptionPress = (option: string, idx: number) => {
-     setSelectedOption(option);
-     setSelectedOptionIdx(idx); // Track the selected option index
-   };
-  const triggerShakeAnimation = () => {
-    Animated.sequence([
-      Animated.timing(shakeAnimation, {
-        toValue: 10,
-        duration: 50,
-        easing: Easing.bounce,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnimation, {
-        toValue: -10,
-        duration: 50,
-        easing: Easing.bounce,
-        useNativeDriver: true,
-      }),
-      Animated.timing(shakeAnimation, {
-        toValue: 0,
-        duration: 50,
-        easing: Easing.bounce,
-        useNativeDriver: true,
-      }),
-    ]).start();
+
+  const handleNext = () => {
+    setCurrentQuestion(currentQuestion + 1);
+    setIsNext(false);
+    setSelectedOption(null);
+    setSelectedOptionIdx(null);
+    setButtonText("Submit");
   };
+
   return (
     <LinearGradient
       colors={["#0FD0C4", "#94DBD7", "#4D5CE2", "#076633"]}
@@ -230,10 +133,6 @@ export default function Quiz() {
                     setSelectedOption(null);
                     setIsCorrect(null);
                     setShowScore(false);
-                    setIsNext(false);
-                    setIndex(0);
-                    setButtonText("Submit");
-                    setSelectedOptionIdx(null);
                     setQuestionResults(Array(questions.length).fill(null));
                   }}
                 >
@@ -303,43 +202,21 @@ export default function Quiz() {
                     key={idx}
                     style={[
                       styles.optionButton,
-                      isNext
-                        ? selectedOptionIdx === idx
-                          ? isCorrect
-                            ? { backgroundColor: "#055F34" }
-                            : { backgroundColor: "#CE1010" }
-                          : { backgroundColor: "white" }
-                        : selectedOptionIdx === idx
-                        ? { backgroundColor: "#A69E9E" }
-                        : { backgroundColor: "#fff" },
+                      selectedOptionIdx === idx
+                        ? { backgroundColor: "gray" }
+                        : { backgroundColor: "white" },
                     ]}
                     onPress={() => {
                       handleOptionPress(option, idx);
                     }}
-                    disabled={isDisable}
+                    disabled={!!selectedOption} // Disable if an option is already selected
                   >
                     <Text
                       style={[
                         styles.optionButtonText,
-                        isNext
-                          ? selectedOptionIdx === idx
-                            ? isCorrect
-                              ? { color: "#fff" }
-                              : { color: "#fff" }
-                            : { color: "#333" }
-                          : selectedOptionIdx === idx
-                          ? { color: "#333" }
-                          : { color: "#333" },
+                        // selectedOption === option && { color: "white" },
                       ]}
                     >
-                      {isNext && selectedOptionIdx === idx && (
-                        <Image
-                          source={
-                            isCorrect ? correctAnswerIcon : wrongAnswerIcon
-                          }
-                          style={styles.iconStyle}
-                        />
-                      )}
                       {option}
                     </Text>
                   </TouchableOpacity>
@@ -360,7 +237,6 @@ export default function Quiz() {
                   showPopup={showPopup}
                   badgeEarned={isCorrect ? "Good Job!" : "Try Again!"}
                   onRetry={handleRetry}
-                  IsRetry={isRetry}
                 />
               )}
               {hint && (
@@ -398,9 +274,9 @@ const styles = StyleSheet.create({
     justifyContent: "left",
   },
   restartContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
+    flex: 1, // Make sure it takes up full height
+    justifyContent: "center", // Center content vertically
+    alignItems: "center", // Center content horizontally
   },
   restartButtonContainer: {
     width: "90%",
@@ -425,11 +301,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   iconStyle: {
-    width: 25,
-    height: 25,
+    width: 20,
+    height: 20,
     borderRadius: 10,
     marginRight: 10,
-    
   },
   scrollbar: {
     height: 10,
@@ -443,12 +318,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   questionScroll: {
-    maxHeight: 150,
+    maxHeight: 150, // Adjust the height to limit scrolling area for the question
   },
   codeScroll: {
-    maxHeight: 100,
-    backgroundColor: "#424140",
+    maxHeight: 100, // Restrict height for scrolling code
+    backgroundColor: "#2e2e2e",
     width: 380,
+    // height: 120,
     borderRadius: 10,
     marginBottom: 20,
   },
@@ -461,10 +337,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#55D6CE",
     padding: 20,
     borderRadius: 15,
-    width: 390,
+    width: 390, // Fixed width
     height: 100,
-    minHeight: 60,
+    minHeight: 60, // Minimum height to maintain consistency
     marginBottom: 30,
+    // borderWidth: 2,
+    // borderColor: "#020923",
     flexShrink: 1,
   },
 
@@ -473,11 +351,11 @@ const styles = StyleSheet.create({
     color: "#fff",
     padding: 20,
     borderRadius: 15,
-    width: 380,
-    minHeight: 60,
+    width: "90%", // Fixed width
+    minHeight: 60, // Minimum height to maintain consistency
   },
   optionButton: {
-    width: 380,
+    width: "90%", // Fixed width
     backgroundColor: "#f5f5f5",
     paddingVertical: 15,
     paddingHorizontal: 20,
@@ -487,18 +365,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderColor: "#020923",
-    minHeight: 50,
-   
+    minHeight: 50, // Set minimum height
   },
   optionButtonText: {
     color: "#333",
     fontSize: 18,
     fontWeight: "bold",
-    flexShrink: 1,
-    
+    flexShrink: 1, // Ensure text wraps
+    width: "100%", // Full width of the button
   },
   nextButton: {
-    width: 380,
+    width: "90%",
     backgroundColor: "#07A417",
     paddingVertical: 15,
     paddingHorizontal: 20,
@@ -522,11 +399,11 @@ const styles = StyleSheet.create({
     marginTop: 15,
     fontSize: 16,
     fontStyle: "italic",
-    color: "#FF5733",
-    backgroundColor: "#FEEFB3",
+    color: "#FF5733", // Hint color (choose a color that suits your design)
+    backgroundColor: "#FEEFB3", // Background for the hint text
     padding: 10,
     borderRadius: 10,
     textAlign: "center",
-    width: 380,
+    width: "90%", // Width to align with other elements
   },
 });

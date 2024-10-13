@@ -16,7 +16,7 @@ export default function Index() {
 
       <View style={styles.content}>
         <Text style={styles.heading}>Welcome to the Quiz</Text>
-        <Link href={"/quiz"} style={styles.linkButton}>
+        <Link href={"/Quiz"} style={styles.linkButton}>
           <Text style={styles.linkText}>Start Quiz</Text>
         </Link>
       </View>
