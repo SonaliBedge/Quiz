@@ -75,6 +75,9 @@ export default function Quiz() {
   const [scrollbarWidth, setScrollbarWidth] = useState<number>(200);
   const [showScore, setShowScore] = useState<boolean>(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [isSelectedOption, setIsSelectedOption] = useState<boolean | null>(
+    false
+  );
   const [resultMessage, setResultMessage] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [showPopup, setShowPopup] = useState<boolean>(false);
@@ -97,6 +100,7 @@ export default function Quiz() {
   }, [questions.length]);
   const OptionSelected = (option: string): void => {
     setSelectedOption(option);    
+    setSelectedOptionIdx(idx);
   };
   const handleAnswer = () => {   
     const correct = selectedOption === questions[currentQuestion].correctAnswer;
@@ -115,7 +119,9 @@ export default function Quiz() {
       setSelectedOption(null);
       setIsDisable(false);
      
-    } else {
+    }
+     else 
+     {
       triggerShakeAnimation(); // Trigger the shake animation on incorrect answer
       if (!isRetry) {
         setButtonText("Submit");
@@ -135,6 +141,7 @@ export default function Quiz() {
     }
     setIsCorrect(correct);
     setShowPopup(true);
+
     setTimeout(() => setShowPopup(false), 3000);
     const result = (score * 100) / questions.length;
 
@@ -162,6 +169,7 @@ export default function Quiz() {
     setButtonText("Submit");
     setIsDisable(false);
     setSelectedOptionIdx(null);
+    // setIsSelectedOption(false);
   };
 
   const handleNext = (): void => {
@@ -177,14 +185,18 @@ export default function Quiz() {
       setIsDisable(false);
       setButtonText("Submit");
       setSelectedOptionIdx(null);
+      setIsSelectedOption(false);
     } else {
       setShowScore(true);
       setIndex(0);
     }
   };
-   const handleOptionPress = (option: string, idx: number) => {
+   const handleOptionPress = (option: string, idx: number) => {    
      setSelectedOption(option);
      setSelectedOptionIdx(idx); // Track the selected option index
+     setIsSelectedOption(true);
+    //  setIsNext(true);
+
    };
   const triggerShakeAnimation = () => {
     Animated.sequence([
@@ -303,45 +315,16 @@ export default function Quiz() {
                     key={idx}
                     style={[
                       styles.optionButton,
-                      isNext
-                        ? selectedOptionIdx === idx
-                          ? isCorrect
-                            ? { backgroundColor: "#055F34" }
-                            : { backgroundColor: "#CE1010" }
-                          : { backgroundColor: "white" }
-                        : selectedOptionIdx === idx
-                        ? { backgroundColor: "#A69E9E" }
-                        : { backgroundColor: "#fff" },
+                      selectedOptionIdx === idx
+                        ? { backgroundColor: "#A69E9E" } // gray when selected
+                        : { backgroundColor: "#fff" }, // white by default
                     ]}
                     onPress={() => {
                       handleOptionPress(option, idx);
                     }}
                     disabled={isDisable}
                   >
-                    <Text
-                      style={[
-                        styles.optionButtonText,
-                        isNext
-                          ? selectedOptionIdx === idx
-                            ? isCorrect
-                              ? { color: "#fff" }
-                              : { color: "#fff" }
-                            : { color: "#333" }
-                          : selectedOptionIdx === idx
-                          ? { color: "#333" }
-                          : { color: "#333" },
-                      ]}
-                    >
-                      {isNext && selectedOptionIdx === idx && (
-                        <Image
-                          source={
-                            isCorrect ? correctAnswerIcon : wrongAnswerIcon
-                          }
-                          style={styles.iconStyle}
-                        />
-                      )}
-                      {option}
-                    </Text>
+                    <Text style={[styles.optionButtonText]}>{option}</Text>
                   </TouchableOpacity>
                 </Animated.View>
               ))}
